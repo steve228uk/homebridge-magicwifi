@@ -38,11 +38,19 @@ MagicHomeAccessory.prototype.identify = function(callback) {
 MagicHomeAccessory.prototype.getServices = function() {
     var informationService = new Service.AccessoryInformation();
 
-    informationService
-        .setCharacteristic(Characteristic.Manufacturer, 'ACME Ltd.')
-        .setCharacteristic(Characteristic.Model, 'LED-controller')
-        .setCharacteristic(Characteristic.SerialNumber, '123456789');
-
+    if (this.config.manufacturer) {
+        informationService.setCharacteristic(Characteristic.Manufacturer,
+                                             this.config.manufacturer);
+    }
+    if (this.config.model) {
+        informationService.setCharacteristic(Characteristic.Model,
+                                             this.config.model);
+    }
+    if (this.config.serialNumber) {
+        informationService.setCharacteristic(Characteristic.SerialNumber,
+                                             this.config.serialNumber);
+    }
+    
     var lightbulbService = new Service.Lightbulb(this.name);
 
     lightbulbService
