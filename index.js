@@ -24,7 +24,8 @@ function MagicHomeAccessory(log, config, api) {
     this.color = {H: 255, S:100, L:50};
     this.brightness = 100;
     this.purewhite = config.purewhite || false;
-
+    this.scheduled_set = null;
+    
     this.getColorFromDevice();
 
 }
@@ -109,18 +110,22 @@ MagicHomeAccessory.prototype.getColorFromDevice = function() {
 };
 
 MagicHomeAccessory.prototype.setToCurrentColor = function() {
-    var color = this.color;
+    if (this.scheduled_set) { return; } // already scheduled
+    this.scheduled_set = setImmediate(() => {
+        var color = this.color;
 
-    if(color.S == 0 && color.H == 0 && this.purewhite) {
-        this.setToWarmWhite();
-        return
-    }
+        if(color.S == 0 && color.H == 0 && this.purewhite) {
+            this.setToWarmWhite();
+            return
+        }
 
-    var brightness = this.brightness;
-    var converted = convert.hsl.rgb([color.H, color.S, color.L]);
+        var brightness = this.brightness;
+        var converted = convert.hsl.rgb([color.H, color.S, color.L]);
 
-    var base = '-x ' + this.setup + ' -c';
-    this.sendCommand(base + Math.round((converted[0] / 100) * brightness) + ',' + Math.round((converted[1] / 100) * brightness) + ',' + Math.round((converted[2] / 100) * brightness));
+        var base = '-x ' + this.setup + ' -c';
+        this.sendCommand(base + Math.round((converted[0] / 100) * brightness) + ',' + Math.round((converted[1] / 100) * brightness) + ',' + Math.round((converted[2] / 100) * brightness));
+        this.scheduled_set = null;
+    })
 };
 
 MagicHomeAccessory.prototype.setToWarmWhite = function() {
