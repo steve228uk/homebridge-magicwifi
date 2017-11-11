@@ -24,7 +24,8 @@ function MagicHomeAccessory(log, config, api) {
 	this.color = {H: 255, S:100, L:50};
 	this.brightness = 100;
     this.purewhite = config.purewhite || false;
-
+	this.onlywhite = config.onlywhite || false;
+	this.combinedwhite = config.combinedwhite || false;
 	this.getColorFromDevice();
 
 }
@@ -74,6 +75,7 @@ MagicHomeAccessory.prototype.sendCommand = function(command, callback) {
 	var exec = require('child_process').exec;
 	var cmd =  __dirname + '/flux_led.py ' + this.ip + ' ' + command;
 	exec(cmd, callback);
+        //this.log("Sent command: %s", cmd);
 };
 
 MagicHomeAccessory.prototype.getState = function (callback) {
@@ -108,19 +110,53 @@ MagicHomeAccessory.prototype.getColorFromDevice = function() {
 	}.bind(this));
 };
 
+// Behaviour:
+// On RGB: std rgb // onlywhite: disabled for this setup
+// On RGBW: std: rgb // combinedwhite: std + white is controlled by brightness // onlywhite: white channel will be controlled by brightness
+// On RGBWW: std: rgb // combinedwhite: std + both whites are controlled by brightness // onlywhite: Only ww and cw channel is active ww/cw are controlled by color temperature
 MagicHomeAccessory.prototype.setToCurrentColor = function() {
 	var color = this.color;
-
-    if(color.S == 0 && color.H == 0 && this.purewhite) {
-        this.setToWarmWhite();
-        return
-    }
-
+	var base = '-x ' + this.setup + ' -V';
 	var brightness = this.brightness;
-	var converted = convert.hsl.rgb([color.H, color.S, color.L]);
+	var ww=Math.round(brightness/100*255); // brightness is 0...100
+	var cw=Math.round(brightness/100*255);
+	//console.log("reuest: " + color.H +"/"+color.S+"/"+color.L+"/"+brightness);
+	if(this.setup =="RGBW" && this.onlywhite){ // onlywhite on rgbw (only set white channel to brightness)
+		this.sendCommand(base + '0,0,0,' + ww + ',0');
 
-    var base = '-x ' + this.setup + ' -c';
-	this.sendCommand(base + Math.round((converted[0] / 100) * brightness) + ',' + Math.round((converted[1] / 100) * brightness) + ',' + Math.round((converted[2] / 100) * brightness));
+	}else if(this.setup =="RGBWW" && this.onlywhite){ // onlywhite on rgbww (controlling white tone depending on color)
+		var converted = convert.hsl.rgb([color.H, color.S, color.L]);
+		var r=converted[0];
+		var g=converted[1];
+		var b=converted[2];
+		//console.log("reuest(rgb): " + r +"/"+g+"/"+b+"/"+brightness);
+		//defining color vectors for ww and cw
+		var wred=223; //maximum value of red for warm colors
+		var cred=98; //minimum value of red for cold colors
+		var fac=(r-cred)/(wred-cred); // assume linear degradation between red values
+		fac=Math.max(0.0,Math.min(1.0,fac));
+		//brightness will be adjusted  that sum of both matches brightnessvalue (does not yield maximum power output, but brightness doesn't vary)
+		ww=Math.round(fac*brightness*2.55);
+		cw=Math.round((1-fac)*brightness*2.55);
+		this.sendCommand(base + '0,0,0,' + ww + ','+cw);
+
+	}else{ // std behaviour same for all
+        	var converted = convert.hsl.rgb([color.H, color.S, color.L]);
+		var r=Math.round((converted[0] / 100) * brightness);
+		var g=Math.round((converted[1] / 100) * brightness);
+		var b=Math.round((converted[2] / 100) * brightness);
+		if(this.combinedwhite){// set value for all channels, including white
+			this.sendCommand(base + r + ',' + g + ',' + b + ',' + ww + ',' +cw);
+		}else{
+			if(color.S == 0 && color.H == 0 && this.purewhite) { //control brightness of white channel if white value is selected and option enabled
+				this.sendCommand(base + '0,0,0,' + ww + ','+cw);
+			}else{ //modify only rgb values and preserve white
+				var base = '-x ' + this.setup + ' -c';
+				this.sendCommand(base + r + ',' + g + ',' + b);
+			}
+		}
+	}
+	return
 };
 
 MagicHomeAccessory.prototype.setToWarmWhite = function() {

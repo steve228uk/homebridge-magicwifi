@@ -7,6 +7,15 @@
     },
 
     "description": "An example Homebridge config for MagicHome.",
+    "option-description":[
+       "purewhite",
+           "controls the white channel for RGBW and RGBWW (ww - only) via brightness if white color is chosen,",
+           "values for white will be preserved if color is changed - other options will disable this one",
+       "onlywhite",
+           "only the white channels are used in RGBW or RGBWW - RGBWW: Color temperature is controlled for ww and cw balance",
+       "combinedwhite",
+           "additionally to the rgb channels, the white channels are controlled by brightness (RGBWW, both at the same level)"
+    ],
 
     "accessories": [
        {
@@ -14,7 +23,9 @@
            "name": "LED Strip",
            "ip": "192.168.1.111",
            "setup": "RGBWW",
-           "purewhite": true
+           "purewhite": false,
+           "onlywhite": false,
+           "combinedwhite": true
        }
     ]
 }
