@@ -567,7 +567,9 @@ class WifiLedBulb():
 		msg.append(0x00)
 		msg.append(0x00)
 		msg.append(0x00)
-		msg.append(utils.percentToByte(level))
+		msg.append(utils.percentToByte(level)) # warm white or single white channel
+                if setup == "RGBWW":
+                        msg.append(utils.percentToByte(0x00)) #cold white
 		msg.append(0x0f)
 		msg.append(0x0f)
 		self.__write(msg)
@@ -580,15 +582,30 @@ class WifiLedBulb():
 		msg.append(r)
 		msg.append(g)
 		msg.append(b)
-		if setup == "RGBW":
-			msg.append(0x00)
-			msg.append(0xf0)
+		if setup == "RGBW" or setup == "RGBWW":
+			msg.append(0x00) # single white channel or warm white (ww)
 		if setup == "RGBWW":
-			msg.append(0x00)
-			msg.append(0x00)
-			msg.append(0xf0)
-		msg.append(0x0f)
+			msg.append(0x00) # cold white (cw)
+		msg.append(0xf0) #mask rgb=0xf0 whites=0x0f all=0xff
+                msg.append(0x0f)
 		self.__write(msg)
+
+
+        def setChannels(self, r,g,b,ww,cw, persist=True, setup="RGBW"):
+                if persist:
+                        msg = bytearray([0x31])
+                else:
+                        msg = bytearray([0x41])
+                msg.append(r)
+                msg.append(g)
+                msg.append(b)
+                if setup == "RGBW" or setup == "RGBWW":
+                        msg.append(ww) # single white channel or warm white (ww)
+                if setup == "RGBWW":
+                        msg.append(cw) # cold white (cw)
+                msg.append(0xff) #mask rgb=0xf0 whites=0x0f all=0xff
+                msg.append(0x0f)
+                self.__write(msg)
 
 	def setPresetPattern(self, pattern, speed):
 
@@ -1091,6 +1108,9 @@ def parseArgs():
 	mode_group.add_option("-c", "--color", dest="color", default=None,
 				  help="Set single color mode.  Can be either color name, web hex, or comma-separated RGB triple",
 				  metavar='COLOR')
+        mode_group.add_option("-V", "--channels", dest="channels", default=None,
+                                  help="Set each available channel. Must be a comma seperated list with values for each channel (r,g,b,ww,cw) between 0 and 255",
+                                  metavar='CHANNELS')
 	mode_group.add_option("-x", "--setup", dest="setup", default="RGBW",
 				  help="The setup of the lights: RGB, RGBW or RGBWW",
 				  metavar='SETUP')
@@ -1168,10 +1188,11 @@ def parseArgs():
 	mode_count = 0
 	if options.color:  mode_count += 1
 	if options.ww:	 mode_count += 1
+	if options.channels: mode_count += 1
 	if options.preset: mode_count += 1
 	if options.custom: mode_count += 1
 	if mode_count > 1:
-		parser.error("options --color, --warmwhite, --preset, and --custom are mutually exclusive")
+		parser.error("options --color, --warmwhite,--channels,  --preset, and --custom are mutually exclusive")
 
 	if options.on and options.off:
 		parser.error("options --on and --off are mutually exclusive")
@@ -1183,6 +1204,11 @@ def parseArgs():
 		options.color = utils.color_object_to_tuple(options.color)
 		if options.color is None:
 			parser.error("bad color specification")
+
+        if options.channels:
+                options.channels = [int(e) for e in options.channels.split(',')]
+                if options.channels is None:
+                        parser.error("bad channel specification")
 
 	if options.preset:
 		if not PresetPattern.valid(options.preset[0]):
@@ -1213,7 +1239,7 @@ def parseArgs():
 	return (options, args)
 #-------------------------------------------
 def main():
-
+        print "Started"
 	(options, args) = parseArgs()
 
 	if options.scan:
@@ -1268,6 +1294,11 @@ def main():
 			else:
 				print "[{}]".format(name)
 			bulb.setRgb(options.color[0],options.color[1],options.color[2], not options.volatile, options.setup)
+
+                elif options.channels is not None:
+                        print "Setting channels:{}".format(options.channels),
+                        name = utils.color_tuple_to_string(options.channels)
+                        bulb.setChannels(options.channels[0],options.channels[1],options.channels[2],options.channels[3],options.channels[4], not options.volatile, options.setup)
 
 		elif options.custom is not None:
 			bulb.setCustomPattern(options.custom[2], options.custom[1], options.custom[0])
