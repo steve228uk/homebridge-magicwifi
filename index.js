@@ -71,8 +71,9 @@ MagicHomeAccessory.prototype.getServices = function() {
 // MARK: - UTIL
 
 MagicHomeAccessory.prototype.sendCommand = function(command, callback) {
-	var exec = require('child_process').exec;
-	var cmd =  __dirname + '/flux_led.py ' + this.ip + ' ' + command;
+    var exec = require('child_process').exec;
+    var cmd = __dirname + '/flux_led.py ' + this.ip + ' ' + command;
+   // this.log(cmd);
 	exec(cmd, callback);
 };
 
@@ -109,12 +110,37 @@ MagicHomeAccessory.prototype.getColorFromDevice = function() {
 };
 
 MagicHomeAccessory.prototype.setToCurrentColor = function() {
-	var color = this.color;
+    var color = this.color;
 
-    if(color.S == 0 && color.H == 0 && this.purewhite) {
+
+    //Setting both Saturation and Hue to 0 will turn on warm white
+    if (color.S == 0 && color.H == 0 && this.purewhite) {
         this.setToWarmWhite();
         return
     }
+    //Asking siri to set color to "snow" will turn on cold white
+    else if (color.S == 2 && color.H == 0 && this.purewhite) {
+        this.setToColdWhite();
+        return
+    }
+
+    //Asking siri to set color to "cream" will turn on warm white
+    else if (color.S == 18 && color.H == 57 && this.purewhite) {
+        this.setToWarmWhite();
+        return
+    }
+    
+    //If the selection reticle is located on the left half of the color wheel with less than 25 saturation (halfway towards the center) cold white will turn on
+    else if (color.S < 25 && color.H > 90 && color.H < 270 && this.purewhite) {
+        this.setToColdWhite();
+        return
+    }
+
+    //If the selection reticle is located on the right half of the color wheel with less than 25 saturation (halfway towards the center) warm white will turn on
+    else if (color.S < 25 && ((color.H > 0 && color.H < 90) || (color.H > 270 && color.H < 360)) && this.purewhite) {
+        this.setToWarmWhite();
+        return
+	}
 
 	var brightness = this.brightness;
 	var converted = convert.hsl.rgb([color.H, color.S, color.L]);
@@ -125,7 +151,12 @@ MagicHomeAccessory.prototype.setToCurrentColor = function() {
 
 MagicHomeAccessory.prototype.setToWarmWhite = function() {
     var brightness = this.brightness;
-    this.sendCommand('-w ' + brightness);
+    this.sendCommand('-x ' + this.setup + ' -w' + brightness);
+};
+
+MagicHomeAccessory.prototype.setToColdWhite = function() {
+    var brightness = this.brightness;
+    this.sendCommand('-x ' + this.setup + ' -z' + brightness);
 };
 
 // MARK: - POWERSTATE

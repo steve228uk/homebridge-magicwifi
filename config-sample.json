@@ -1,20 +1,56 @@
 {
     "bridge": {
         "name": "Homebridge",
-        "username": "DC:39:3D:F3:CE:31",
-        "port": 51827,
-        "pin": "031-57-155"
-    },
+        "username": "CC:25:3D:E3:CE:30",
+        "port": 51826,
+        "pin": "123-45-678"
+    }, 
 
-    "description": "An example Homebridge config for MagicHome.",
+"description": "So far I have run into 6 variants of the magichome strip controllers and lightbulbs: Red Green Blue, Red Green Blue White, Red Green Blue Warm White Cold White, and the Green Red Blue version of each. All light bulbs that I have come across are RGBW. If a light bulb or strip controller has a dedicated white LED be sure to set 'purewhite' to true. If your red and green seem switched, be sure to use the green red blue variant.",
 
-    "accessories": [
-       {
-           "accessory": "MagicHome",
-           "name": "LED Strip",
-           "ip": "192.168.1.111",
-           "setup": "RGBWW",
-           "purewhite": true
-       }
-    ]
+"accessories": [
+
+   {
+       "accessory": "MagicHome",
+       "name": "4-pin Red Green Blue Controller NO DEDICATED WHITE LEDS",
+       "ip": "192.168.1.xxx",
+       "setup": "RGB",
+       "purewhite": false
+   },
+   {
+       "accessory": "MagicHome",
+       "name": "4-pin Green Red Blue Controller NO DEDICATED WHITE LEDS Choose this if your green and red are inverted",
+       "ip": "192.168.1.xxx",
+       "setup": "GRB",
+       "purewhite": false
+   },
+   {
+       "accessory": "MagicHome",
+       "name": "5-pin Red Green Blue White Controller DEDICTATED WHITE LEDS",
+       "ip": "192.168.1.xxx",
+       "setup": "RGBW",
+       "purewhite": true
+   },
+   {
+       "accessory": "MagicHome",
+       "name": "5-pin Green Red Blue White Controller DEDICTATED WHITE LEDS Choose this if your green and red are inverted",
+       "ip": "192.168.1.xxx",
+       "setup": "GRBW",
+       "purewhite": true
+   },
+   {
+       "accessory": "MagicHome",
+       "name": "6-pin Red Green Blue Warm White && Cold White Controller DEDICTATED WHITE LEDS",
+       "ip": "192.168.1.xxx",
+       "setup": "RGBWW",
+       "purewhite": true
+   },
+   {
+       "accessory": "MagicHome",
+       "name": "6-pin Green Red Blue Warm White && Cold White Controller DEDICTATED WHITE LEDS Choose this if your green and red are inverted",
+       "ip": "192.168.1.xxx",
+       "setup": "GRBWW",
+       "purewhite": true
+   } 
+] 
 }

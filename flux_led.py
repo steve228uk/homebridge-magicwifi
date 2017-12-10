@@ -272,10 +272,12 @@ class LedTimer():
 		self.green = 0
 		self.blue = 0
 		self.warmth_level = 0
+		self.cold_level = 0
 
 	def setModePresetPattern(self, pattern, speed):
 		self.mode = "preset"
 		self.warmth_level = 0
+		self.cold_level = 0
 		self.pattern_code = pattern
 		self.delay = utils.speedToDelay(speed)
 		self.turn_on = True
@@ -283,6 +285,7 @@ class LedTimer():
 	def setModeColor(self, r, g, b):
 		self.mode = "color"
 		self.warmth_level = 0
+		self.cold_level = 0
 		self.red = r
 		self.green = g
 		self.blue = b
@@ -292,6 +295,17 @@ class LedTimer():
 	def setModeWarmWhite(self, level):
 		self.mode = "ww"
 		self.warmth_level = utils.percentToByte(level)
+		self.cold_level = 0
+		self.pattern_code = 0x61
+		self.red = 0
+		self.green = 0
+		self.blue = 0
+		self.turn_on = True
+		
+	def setModeColdWhite(self, level):
+		self.mode = "cw"
+		self.warmth_level = 0
+		self.cold_level = utils.percentToByte(level)
 		self.pattern_code = 0x61
 		self.red = 0
 		self.green = 0
@@ -355,6 +369,10 @@ class LedTimer():
 		self.warmth_level = bytes[12]
 		if self.warmth_level != 0:
 			self.mode = "ww"
+			
+		self.cold_level= bytes[12]
+		if self.cold_level != 0:
+			self.mode = "cw"
 
 		if bytes[13] == 0xf0:
 			self.turn_on = True
@@ -429,6 +447,8 @@ class LedTimer():
 		if self.pattern_code == 0x61:
 			if self.warmth_level != 0:
 				txt += "Warm White: {}%".format(utils.byteToPercent(self.warmth_level))
+			elif self.cold_level != 0:
+				txt += "Cold White: {}%".format(utils.byteToPercent(self.cold_level))
 			else:
 				color_str = utils.color_tuple_to_string((self.red,self.green,self.blue))
 				txt += "Color: {}".format(color_str)
@@ -494,6 +514,8 @@ class WifiLedBulb():
 			mode_str = "Color: {}".format(color_str)
 		elif mode == "ww":
 			mode_str = "Warm White: {}%".format(utils.byteToPercent(ww_level))
+		elif mode == "cw":
+			mode_str = "Cold White: {}%".format(utils.byteToPercent(ww_level))
 		elif mode == "preset":
 			pat = PresetPattern.valtostr(pattern)
 			mode_str = "Pattern: {} (Speed {}%)".format(pat, speed)
@@ -559,7 +581,8 @@ class WifiLedBulb():
 	def turnOff(self):
 		self.turnOn(False)
 
-	def setWarmWhite(self, level, persist=True):
+	def setWarmWhite(self, level, persist=True, setup="RGBW"):
+		print setup
 		if persist:
 			msg = bytearray([0x31])
 		else:
@@ -567,6 +590,23 @@ class WifiLedBulb():
 		msg.append(0x00)
 		msg.append(0x00)
 		msg.append(0x00)
+		msg.append(utils.percentToByte(level))
+		if (setup == "RGBWW" or setup == "GRBWW"):
+			msg.append(0x00)
+		msg.append(0x0f)
+		msg.append(0x0f)
+		self.__write(msg)
+	
+	def setColdWhite(self, level, persist=True, setup="RGBW"):
+		if persist:
+			msg = bytearray([0x31])
+		else:
+			msg = bytearray([0x41])
+		msg.append(0x00)
+		msg.append(0x00)
+		msg.append(0x00)
+		if (setup == "RGBWW" or setup == "GRBWW"):
+			msg.append(0x00)
 		msg.append(utils.percentToByte(level))
 		msg.append(0x0f)
 		msg.append(0x0f)
@@ -577,16 +617,18 @@ class WifiLedBulb():
 			msg = bytearray([0x31])
 		else:
 			msg = bytearray([0x41])
-		msg.append(r)
-		msg.append(g)
-		msg.append(b)
-		if setup == "RGBW":
+		if (setup == "GRB" or setup == "GRBW" or setup == "GRBWW"):
+			msg.append(g)
+			msg.append(r)
+			msg.append(b)
+		if (setup == "RGB" or setup == "RGBW" or setup == "RGBWW"):
+			msg.append(r)
+			msg.append(g)
+			msg.append(b)
+		if (setup == "RGBWW" or setup == "GRBWW"):
 			msg.append(0x00)
-			msg.append(0xf0)
-		if setup == "RGBWW":
-			msg.append(0x00)
-			msg.append(0x00)
-			msg.append(0xf0)
+		msg.append(0x00)
+		msg.append(0xf0)
 		msg.append(0x0f)
 		self.__write(msg)
 
@@ -743,7 +785,7 @@ class  BulbScanner():
 		return self.found_bulbs
 
 	def scan(self, timeout=10):
-
+        #ask device for it's configuration tcp 81 8a 8b 96 
 		DISCOVERY_PORT = 48899
 
 		sock = socket.socket(socket.AF_INET,socket.SOCK_DGRAM)
@@ -1073,7 +1115,6 @@ def parseArgs():
 	info_group.add_option("--listcolors",
 					  action="store_true", dest="listcolors", default=False,
 					  help="List color names")
-
 	parser.add_option("-s", "--scan",
 					  action="store_true", dest="scan", default=False,
 					  help="Search for bulbs on local network")
@@ -1096,6 +1137,9 @@ def parseArgs():
 				  metavar='SETUP')
 	mode_group.add_option("-w", "--warmwhite", dest="ww", default=None,
 				  help="Set warm white mode (LEVEL is percent)",
+				  metavar='LEVEL', type="int")
+	mode_group.add_option("-z", "--coldwhite", dest="cw", default=None,
+				  help="Set cold white mode (LEVEL is percent)",
 				  metavar='LEVEL', type="int")
 	mode_group.add_option("-p", "--preset", dest="preset", default=None,
 				  help="Set preset pattern mode (SPEED is percent)",
@@ -1168,6 +1212,7 @@ def parseArgs():
 	mode_count = 0
 	if options.color:  mode_count += 1
 	if options.ww:	 mode_count += 1
+	if options.cw:	 mode_count += 1
 	if options.preset: mode_count += 1
 	if options.custom: mode_count += 1
 	if mode_count > 1:
@@ -1258,7 +1303,11 @@ def main():
 
 		if options.ww is not None:
 			print "Setting warm white mode, level: {}%".format(options.ww)
-			bulb.setWarmWhite(options.ww, not options.volatile)
+			bulb.setWarmWhite(options.ww, not options.volatile, options.setup)
+		
+		elif options.cw is not None:
+			print "Setting cold white mode, level: {}%".format(options.cw)
+			bulb.setColdWhite(options.cw, not options.volatile, options.setup)
 
 		elif options.color is not None:
 			print "Setting color RGB:{}".format(options.color),
