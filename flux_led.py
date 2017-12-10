@@ -591,7 +591,7 @@ class WifiLedBulb():
 		msg.append(0x00)
 		msg.append(0x00)
 		msg.append(utils.percentToByte(level))
-		if setup == "RGBWW":
+		if (setup == "RGBWW" or setup == "GRBWW"):
 			msg.append(0x00)
 		msg.append(0x0f)
 		msg.append(0x0f)
@@ -605,7 +605,7 @@ class WifiLedBulb():
 		msg.append(0x00)
 		msg.append(0x00)
 		msg.append(0x00)
-		if setup == "RGBWW":
+		if (setup == "RGBWW" or setup == "GRBWW"):
 			msg.append(0x00)
 		msg.append(utils.percentToByte(level))
 		msg.append(0x0f)
@@ -617,16 +617,18 @@ class WifiLedBulb():
 			msg = bytearray([0x31])
 		else:
 			msg = bytearray([0x41])
-		msg.append(r)
-		msg.append(g)
-		msg.append(b)	
-		if setup == "RGBW":
+		if (setup == "GRB" or setup == "GRBW" or setup == "GRBWW"):
+			msg.append(g)
+			msg.append(r)
+			msg.append(b)
+		if (setup == "RGB" or setup == "RGBW" or setup == "RGBWW"):
+			msg.append(r)
+			msg.append(g)
+			msg.append(b)
+		if (setup == "RGBWW" or setup == "GRBWW"):
 			msg.append(0x00)
-			msg.append(0xf0)
-		if setup == "RGBWW":
-			msg.append(0x00)
-			msg.append(0x00)
-			msg.append(0xf0)
+		msg.append(0x00)
+		msg.append(0xf0)
 		msg.append(0x0f)
 		self.__write(msg)
 
@@ -783,7 +785,7 @@ class  BulbScanner():
 		return self.found_bulbs
 
 	def scan(self, timeout=10):
-
+        #ask device for it's configuration tcp 81 8a 8b 96 
 		DISCOVERY_PORT = 48899
 
 		sock = socket.socket(socket.AF_INET,socket.SOCK_DGRAM)
@@ -1113,7 +1115,6 @@ def parseArgs():
 	info_group.add_option("--listcolors",
 					  action="store_true", dest="listcolors", default=False,
 					  help="List color names")
-
 	parser.add_option("-s", "--scan",
 					  action="store_true", dest="scan", default=False,
 					  help="Search for bulbs on local network")

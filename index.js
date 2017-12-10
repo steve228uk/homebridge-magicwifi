@@ -73,7 +73,7 @@ MagicHomeAccessory.prototype.getServices = function() {
 MagicHomeAccessory.prototype.sendCommand = function(command, callback) {
     var exec = require('child_process').exec;
     var cmd = __dirname + '/flux_led.py ' + this.ip + ' ' + command;
-    this.log(cmd);
+   // this.log(cmd);
 	exec(cmd, callback);
 };
 

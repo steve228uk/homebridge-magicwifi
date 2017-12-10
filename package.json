@@ -1,25 +1,41 @@
 {
-  "name": "homebridge-magichome",
-  "version": "0.3.0",
-  "description": "Magic Home WiFi plugin for homebridge",
-  "licenses": [
-    {
-      "type": "MIT",
-      "url": "https://github.com/steve228uk/homebridge-magichome/raw/master/LICENSE"
-    }
-  ],
-  "homepage": "https://github.com/steve228uk/homebridge-magichome#readme",
-  "repository": {
-    "type": "git",
-    "url": "git://github.com/steve228uk/homebridge-magichome.git"
+  "_from": "homebridge-magichome",
+  "_id": "homebridge-magichome@0.3.0",
+  "_inBundle": false,
+  "_integrity": "sha1-wpilfGl3wIzot9b/3ArY5owGOHc=",
+  "_location": "/homebridge-magichome",
+  "_phantomChildren": {},
+  "_requested": {
+    "type": "tag",
+    "registry": true,
+    "raw": "homebridge-magichome",
+    "name": "homebridge-magichome",
+    "escapedName": "homebridge-magichome",
+    "rawSpec": "",
+    "saveSpec": null,
+    "fetchSpec": "latest"
   },
+  "_requiredBy": [
+    "#USER"
+  ],
+  "_resolved": "https://registry.npmjs.org/homebridge-magichome/-/homebridge-magichome-0.3.0.tgz",
+  "_shasum": "c298a57c6977c08ce8b7d6ffdc0ad8e68c063877",
+  "_spec": "homebridge-magichome",
+  "_where": "/home/pi",
   "bugs": {
     "url": "http://github.com/steve228uk/homebridge-magichome/issues"
   },
-  "engines": {
-    "node": ">=0.12.0",
-    "homebridge": ">=0.3.0"
+  "bundleDependencies": false,
+  "dependencies": {
+    "color-convert": "^1.5.0"
   },
+  "deprecated": false,
+  "description": "Magic Home WiFi plugin for homebridge",
+  "engines": {
+    "homebridge": ">=0.3.0",
+    "node": ">=0.12.0"
+  },
+  "homepage": "https://github.com/steve228uk/homebridge-magichome#readme",
   "keywords": [
     "homebridge-plugin",
     "Flux",
@@ -32,7 +48,16 @@
     "lighbulb",
     "blub"
   ],
-  "dependencies": {
-    "color-convert": "^1.5.0"
-  }
+  "licenses": [
+    {
+      "type": "MIT",
+      "url": "https://github.com/steve228uk/homebridge-magichome/raw/master/LICENSE"
+    }
+  ],
+  "name": "homebridge-magichome",
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/steve228uk/homebridge-magichome.git"
+  },
+  "version": "0.3.0"
 }
